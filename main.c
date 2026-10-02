@@ -7,6 +7,12 @@ int main(void) {
     int current_hour = 8;
     int inventory[INVENTORY_SIZE] = { 4, 6, 0, 2, 0, 3, 8, 0, 1, 0 };
 
+    const char *item_names[10] = {
+        "пусто", "дерево", "камень", "семена",
+        "лопата", "грабли", "тяпка", "телега",
+        "лейка", "корзина"
+    };
+
     int choice;
 
     while (1) {
