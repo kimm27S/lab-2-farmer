@@ -28,7 +28,6 @@ int main(void) {
         printf("[4] Положить предмет\n");
         printf("[5] Выбросить предмет\n");
         printf("[6] Уникальные находки\n");
-        printf("Ваш выбор: ");
 
         scanf("%d", &choice);
         if (scanf("%d", &choice) != 1) {
@@ -158,8 +157,6 @@ int main(void) {
         default:
             printf("Неверный пункт меню!\n");
     }
-
-    return 0;
 }
 
 return 0;
