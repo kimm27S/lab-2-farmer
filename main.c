@@ -1,8 +1,12 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 
 #define INVENTORY_SIZE 10
 
 int main(void) {
+    SetConsoleOutputCP(65001);
+    SetConsoleCP(65001);
+    
     int current_day = 1;
     int current_hour = 8;
     int inventory[INVENTORY_SIZE] = { 4, 6, 0, 2, 0, 3, 8, 0, 1, 0 };
