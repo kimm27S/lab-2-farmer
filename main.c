@@ -1,7 +1,41 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <windows.h>
 
 #define INVENTORY_SIZE 10
+#define MAX_ITEMS 10
+#define MAX_NAME_LEN 64
+#define FARMER_NAME_LEN 33
+
+char item_names[MAX_ITEMS][MAX_NAME_LEN];
+char farmer_name[FARMER_NAME_LEN] = "Фермер";
+
+void load_items(void) {
+
+}
+
+void ask_farmer_name(void) {
+
+}
+
+void find_item_by_name(int* inventory) {
+
+}
+
+void write_diary(int day, int hour, int* inventory) {
+
+}
+
+static const char* strcasestr_my(const char* haystack, const char* needle) {
+
+}
+
+void encyclopedia_search(void) {
+
+}
 
 int main(void) {
     SetConsoleOutputCP(65001);
