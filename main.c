@@ -62,11 +62,42 @@ void ask_farmer_name(void) {
 }
 
 void find_item_by_name(int* inventory) {
-
+    char query[MAX_NAME_LEN];
+    printf("Введите название предмета для поиска: ");
+    if (scanf("%63s", query) != 1) { while (getchar() != '\n'); return; }
+    
+    int found_id = -1;
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (strcmp(item_names[i], query) == 0) { found_id = i; break; }
+    }
+    if (found_id < 0) {
+        printf("Предмет \"%s\" не найден в каталоге.\n", query);
+        return;
+    }
+    
+    printf("ID предмета \"%s\" = %d. Ищем в рюкзаке...\n", query, found_id);
+    int found_any = 0;
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        if (inventory[i] == found_id) {
+            printf("  Найден в слоте %d\n", i);
+            found_any = 1;
+        }
+    }
+    if (!found_any) printf("  В рюкзаке такого предмета нет.\n");
 }
 
 void write_diary(int day, int hour, int* inventory) {
-
+    FILE* f = fopen("diary.txt", "a");
+    if (!f) { printf("[!] Не удалось открыть diary.txt для записи.\n"); return; }
+    fprintf(f, "===== Запись дневника =====\n");
+    fprintf(f, "Фермер: %s\n", farmer_name);
+    fprintf(f, "День %d, %02d:00\n", day, hour);
+    fprintf(f, "Инвентарь:\n");
+    for (int i = 0; i < INVENTORY_SIZE; i++)
+        fprintf(f, "  Слот %d: [%d] - %s\n", i, inventory[i], item_names[inventory[i]]);
+    fprintf(f, "\n");
+    fclose(f);
+    printf("[+] Состояние записано в diary.txt\n");
 }
 
 static const char* strcasestr_my(const char* haystack, const char* needle) {
