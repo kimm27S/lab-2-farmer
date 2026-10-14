@@ -14,11 +14,51 @@ char item_names[MAX_ITEMS][MAX_NAME_LEN];
 char farmer_name[FARMER_NAME_LEN] = "Фермер";
 
 void load_items(void) {
+    const char* defaults[MAX_ITEMS] = {
+        "Пусто", "Дерево", "Камень", "Семена",
+        "Лопата", "Грабли", "Меч", "Щит",
+        "Бинты", "Корзина"
+    };
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        strncpy(item_names[i], defaults[i], MAX_NAME_LEN - 1);
+        item_names[i][MAX_NAME_LEN - 1] = '\0';
+    }
 
+    FILE* f = fopen("items.txt", "r");
+    if (!f) {
+        printf("[!] Файл items.txt не найден — используются названия по умолчанию.\n");
+        return;
+    }
+
+    char line[256];
+    int id = 0;
+    while (id < MAX_ITEMS && fgets(line, sizeof(line), f)) {
+        size_t len = strlen(line);
+        while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r'))
+            line[--len] = '\0';
+        if (len == 0) continue;
+
+        char* p = line;
+        while (*p && isdigit((unsigned char)*p)) p++;
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\0') { id++; continue; }
+
+        strncpy(item_names[id], p, MAX_NAME_LEN - 1);
+        item_names[id][MAX_NAME_LEN - 1] = '\0';
+        id++;
+    }
+    fclose(f);
+    printf("[+] Каталог предметов загружен из items.txt (%d записей).\n", id);
 }
 
 void ask_farmer_name(void) {
-
+    printf("Введите имя фермера (до %d символов): ", FARMER_NAME_LEN - 1);
+    if (fgets(farmer_name, sizeof(farmer_name), stdin)) {
+        size_t len = strlen(farmer_name);
+        while (len > 0 && (farmer_name[len - 1] == '\n' || farmer_name[len - 1] == '\r'))
+            farmer_name[--len] = '\0';
+        if (len == 0) strcpy(farmer_name, "Фермер");
+    }
 }
 
 void find_item_by_name(int* inventory) {
