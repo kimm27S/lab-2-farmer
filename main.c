@@ -196,7 +196,6 @@ int main(void) {
         printf("[9] Расшифровать старые записи (энциклопедия)\n");
         printf("Ваш выбор: ");
 
-        scanf("%d", &choice);
         if (scanf("%d", &choice) != 1) {
             printf("Ошибка: нужно ввести число!\n");
             while (getchar() != '\n');
