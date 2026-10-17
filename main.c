@@ -135,6 +135,7 @@ void encyclopedia_search(void) {
             line[--len] = '\0';
     
         if (strcasestr_my(line, word)) {
+            found = 1;
             fprintf(out, "Статья #%d: ", line_no);
             printf("Статья #%d: ", line_no);
     
