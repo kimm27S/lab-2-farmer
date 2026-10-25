@@ -188,12 +188,35 @@ void encyclopedia_search(void) {
 }
 
 typedef struct {
+    char** map;
+    int width;
+    int height;
+    int hero_x;
+    int hero_y;
+    int depth;
+    int on_stair_up;
 } Dungeon;
 
 static int read_char_choice(void) {
+    int c;
+    do { c = getchar(); } while (c == '\n' || c == '\r');
+    int tmp;
+    while ((tmp = getchar()) != '\n' && tmp != EOF) {}
+    return c;
 }
 
 static char** alloc_map(int w, int h) {
+    char** m = (char**)malloc(h * sizeof(char*));
+    if (!m) return NULL;
+    for (int i = 0; i < h; i++) {
+        m[i] = (char*)malloc(w * sizeof(char));
+        if (!m[i]) {
+            for (int j = 0; j < i; j++) free(m[j]);
+            free(m);
+            return NULL;
+        }
+    }
+    return m;
 }
 
 static void free_map(char** m, int h) {
