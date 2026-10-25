@@ -3,12 +3,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include <windows.h>
 
 #define INVENTORY_SIZE 10
 #define MAX_ITEMS 10
 #define MAX_NAME_LEN 64
 #define FARMER_NAME_LEN 33
+
+#define MIN_MAP_SIZE 5
+#define MAX_MAP_SIZE 30
+#define OBSTACLE_MIN 15
+#define OBSTACLE_MAX 30
+#define MAX_ESCAPE_TRIES 1000
+#define VIEW_RADIUS 4
+
+#define WALL       '#'
+#define FLOOR      '.'
+#define TREE       'T'
+#define ROCK       'R'
+#define HERO       '@'
+#define STAIR_DOWN 'D'
+#define STAIR_UP   'U'
+#define UNKNOWN    '?'
 
 char item_names[MAX_ITEMS][MAX_NAME_LEN];
 char farmer_name[FARMER_NAME_LEN] = "Фермер";
@@ -170,6 +187,39 @@ void encyclopedia_search(void) {
     printf("[+] Результат сохранён в output.txt\n");
 }
 
+typedef struct {
+} Dungeon;
+
+static int read_char_choice(void) {
+}
+
+static char** alloc_map(int w, int h) {
+}
+
+static void free_map(char** m, int h) {
+}
+
+static void destroy_dungeon(Dungeon* d) {
+}
+
+static int find_free_cell(Dungeon* d, int* ox, int* oy) {
+}
+
+static int generate_floor(Dungeon* d, int depth, int with_up_stair) {
+}
+
+static int is_visible(const Dungeon* d, int x, int y) {
+}
+
+static void draw_dungeon(const Dungeon* d) {
+}
+
+static int can_step(const Dungeon* d, int nx, int ny) {
+}
+
+static void do_adventure(void) {
+}
+
 int main(void) {
     SetConsoleOutputCP(65001);
     SetConsoleCP(65001);
@@ -195,6 +245,7 @@ int main(void) {
         printf("[7] Поиск предмета в рюкзаке по названию\n");
         printf("[8] Записать состояние в дневник фермера\n");
         printf("[9] Расшифровать старые записи (энциклопедия)\n");
+        printf("[10] Отправиться в приключение\n");
         printf("Ваш выбор: ");
 
         if (scanf("%d", &choice) != 1) {
@@ -290,12 +341,11 @@ int main(void) {
             }
             printf("\n\nУникальные находки:\n");
 
-            int found_any = 0;  // Нашли ли хоть один предмет
+            int found_any = 0;
 
             for (int i = 0; i < INVENTORY_SIZE; i++) {
-                if (inventory[i] == 0) continue;  // Пропускаем пустые слоты
+                if (inventory[i] == 0) continue;
 
-                // Проверка, стречался ли этот ID раньше
                 int already_seen = 0;
                 for (int j = 0; j < i; j++) {
                     if (inventory[j] == inventory[i]) {
@@ -303,9 +353,8 @@ int main(void) {
                         break;
                     }
                 }
-                if (already_seen) continue;  // Уже выводили — пропускаем
+                if (already_seen) continue;
 
-                // Счетчик, сколько раз этот ID встречается во всём массиве
                 int count = 0;
                 for (int j = 0; j < INVENTORY_SIZE; j++) {
                     if (inventory[j] == inventory[i]) count++;
@@ -332,6 +381,10 @@ int main(void) {
         
         case 9:
             encyclopedia_search();
+            break;
+
+        case 10:
+            do_adventure();
             break;
             
         default:
