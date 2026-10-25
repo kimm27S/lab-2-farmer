@@ -220,12 +220,33 @@ static char** alloc_map(int w, int h) {
 }
 
 static void free_map(char** m, int h) {
+    if (!m) return;
+    for (int i = 0; i < h; i++) free(m[i]);
+    free(m);
 }
 
 static void destroy_dungeon(Dungeon* d) {
+    if (!d) return;
+    free_map(d->map, d->height);
+    d->map = NULL;
+    d->width = d->height = 0;
 }
 
 static int find_free_cell(Dungeon* d, int* ox, int* oy) {
+    for (int t = 0; t < MAX_ESCAPE_TRIES; t++) {        
+        int x = rand() % d->width;
+        int y = rand() % d->height;
+        if (d->map[y][x] == FLOOR) {
+            *ox = x; *oy = y;
+            return 1;
+        }
+    }
+    for (int y = 1; y < d->height - 1; y++)
+        for (int x = 1; x < d->width - 1; x++)
+            if (d->map[y][x] == FLOOR) {
+                *ox = x; *oy = y; return 1;
+            }
+    return 0;
 }
 
 static int generate_floor(Dungeon* d, int depth, int with_up_stair) {
