@@ -250,9 +250,73 @@ static int find_free_cell(Dungeon* d, int* ox, int* oy) {
 }
 
 static int generate_floor(Dungeon* d, int depth, int with_up_stair) {
+    destroy_dungeon(d);
+    
+    d->width = MIN_MAP_SIZE + rand() % (MAX_MAP_SIZE - MIN_MAP_SIZE + 1);
+    d->height = MIN_MAP_SIZE + rand() % (MAX_MAP_SIZE - MIN_MAP_SIZE + 1);
+    d->depth = depth;
+    
+    d->map = alloc_map(d->width, d->height);
+    if (!d->map) {
+        printf("[!] Ошибка выделения памяти под карту.\n");
+        return 0;
+    }
+    
+    for (int y = 0; y < d->height; y++) {
+        for (int x = 0; x < d->width; x++) {
+            if (x == 0 || y == 0 || x == d->width - 1 || y == d->height - 1)
+                d->map[y][x] = WALL;
+            else
+                d->map[y][x] = FLOOR;
+        }
+    }
+    
+    int obstacle_pct = OBSTACLE_MIN + rand() % (OBSTACLE_MAX - OBSTACLE_MIN + 1);
+    for (int y = 1; y < d->height - 1; y++) {
+        for (int x = 1; x < d->width - 1; x++) {
+            if (d->map[y][x] == FLOOR && (rand() % 100) < obstacle_pct)
+                d->map[y][x] = (rand() % 2) ? TREE : ROCK;
+        }
+    }
+    
+    int hx, hy;
+    if (!find_free_cell(d, &hx, &hy)) {
+        printf("[!] Не удалось найти место для героя.\n");
+        return 0;
+    }
+    d->hero_x = hx;
+    d->hero_y = hy;
+    d->map[hy][hx] = HERO;
+    
+    if (with_up_stair) {
+        int placed = 0;
+        int dirs[4][2] = { { 0,-1 },{ 0,1 },{ -1,0 },{ 1,0 } };
+        for (int k = 0; k < 4 && !placed; k++) {
+            int nx = hx + dirs[k][0];
+            int ny = hy + dirs[k][1];
+            if (ny > 0 && ny < d->height - 1 && nx > 0 && nx < d->width - 1 &&
+                d->map[ny][nx] == FLOOR) {
+                d->map[ny][nx] = STAIR_UP;
+                placed = 1;
+            }
+        }
+        if (!placed) {
+            int ux, uy;
+            if (find_free_cell(d, &ux, &uy)) d->map[uy][ux] = STAIR_UP;
+        }
+    }
+    
+    int dx, dy;
+    if (find_free_cell(d, &dx, &dy))
+        d->map[dy][dx] = STAIR_DOWN;
+    
+    return 1;
 }
 
 static int is_visible(const Dungeon* d, int x, int y) {
+    int dx = x - d->hero_x;
+    int dy = y - d->hero_y;
+    return (dx * dx + dy * dy) <= (VIEW_RADIUS * VIEW_RADIUS);
 }
 
 static void draw_dungeon(const Dungeon* d) {
