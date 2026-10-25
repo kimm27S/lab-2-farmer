@@ -320,12 +320,99 @@ static int is_visible(const Dungeon* d, int x, int y) {
 }
 
 static void draw_dungeon(const Dungeon* d) {
+    printf("\n===== ЭТАЖ %d =====\n", d->depth);
+    for (int y = 0; y < d->height; y++) {
+        for (int x = 0; x < d->width; x++) {
+            if (d->map[y][x] == HERO || is_visible(d, x, y))
+                putchar(d->map[y][x]);
+            else
+                putchar(UNKNOWN);
+        }
+        putchar('\n');
+    }
+    printf("Позиция: (%d,%d)  Радиус обзора: %d\n", d->hero_x, d->hero_y, VIEW_RADIUS);
+    printf("[W/A/S/D] шаг, [Q] выход наверх (только на U)\n");
 }
 
 static int can_step(const Dungeon* d, int nx, int ny) {
+    if (nx < 0 || ny < 0 || nx >= d->width || ny >= d->height) return 0;
+    char c = d->map[ny][nx];
+    if (c == WALL || c == TREE || c == ROCK) return 0;
+    return 1;
 }
 
 static void do_adventure(void) {
+    Dungeon d = { 0 };
+    srand((unsigned)time(NULL));
+    
+    if (!generate_floor(&d, 1, 0)) {
+        printf("[!] Не удалось сгенерировать подземелье.\n");
+        return;
+    }
+    
+    int running = 1;
+    
+    while (running) {
+        draw_dungeon(&d);
+    
+        printf("Команда: ");
+        int cmd = read_char_choice();
+        cmd = tolower((unsigned char)cmd);
+    
+        if (cmd == 'q') {
+            if (d.on_stair_up) {
+                printf("[+] Вы выбрались на поверхность! Глубина: %d\n", d.depth);
+                running = 0;
+                break;
+            }
+            else {
+                printf("[!] Здесь нет лестницы наверх (U) — выйти нельзя.\n");
+                continue;
+            }
+        }
+    
+        int dx = 0, dy = 0;
+        if (cmd == 'w') dy = -1;
+        else if (cmd == 's') dy = 1;
+        else if (cmd == 'a') dx = -1;
+        else if (cmd == 'd') dx = 1;
+        else {
+            printf("Неизвестная команда.\n");
+            continue;
+        }
+    
+        int nx = d.hero_x + dx;
+        int ny = d.hero_y + dy;
+        if (!can_step(&d, nx, ny)) {
+            printf("[!] Туда нельзя — стена или препятствие.\n");
+            continue;
+        }
+    
+        char dest = d.map[ny][nx];
+    
+        d.hero_x = nx; d.hero_y = ny;
+        d.map[ny][nx] = HERO;
+        d.map[ny - dy][nx - dx] = FLOOR;
+    
+        d.on_stair_up = (dest == STAIR_UP);
+    
+        if (dest == STAIR_DOWN) {
+            printf("\n[+] Вы спустились ниже! Глубина: %d\n", d.depth + 1);
+            if (!generate_floor(&d, d.depth + 1, 1)) {
+                printf("[!] Не удалось сгенерировать новый этаж.\n");
+                running = 0;
+                break;
+            }
+            continue;
+        }
+    
+        if (dest == STAIR_UP) {
+            printf("[!] Вы на лестнице наверх. Нажмите Q, чтобы выйти.\n");
+            continue;
+        }
+    }
+    
+    destroy_dungeon(&d);
 }
 
 int main(void) {
