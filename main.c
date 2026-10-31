@@ -195,7 +195,6 @@ typedef struct {
     int hero_x;
     int hero_y;
     int depth;
-    int on_stair_up;
 } Dungeon;
 
 static int read_char_choice(void) {
@@ -289,9 +288,9 @@ static int generate_floor(Dungeon* d, int depth, int with_up_stair) {
         printf("[!] Не удалось найти место для героя.\n");
         return 0;
     }
+    
     d->hero_x = hx;
     d->hero_y = hy;
-    d->map[hy][hx] = HERO;
     
     if (with_up_stair) {
         int placed = 0;
@@ -328,7 +327,9 @@ static void draw_dungeon(const Dungeon* d) {
     printf("\n===== ЭТАЖ %d =====\n", d->depth);
     for (int y = 0; y < d->height; y++) {
         for (int x = 0; x < d->width; x++) {
-            if (d->map[y][x] == HERO || is_visible(d, x, y))
+            if (x == d->hero_x && y == d->hero_y)
+                putchar(HERO);
+            else if (is_visible(d, x, y))
                 putchar(d->map[y][x]);
             else
                 putchar(UNKNOWN);
@@ -395,13 +396,8 @@ static void do_adventure(void) {
         }
     
         char dest = d.map[ny][nx];
-        int was_on_up_stair = d.on_stair_up;
-    
-        d.hero_x = nx; d.hero_y = ny;
-        d.map[ny][nx] = HERO;
-        d.map[ny - dy][nx - dx] = was_on_up_stair ? STAIR_UP : FLOOR;
-    
-        d.on_stair_up = (dest == STAIR_UP);
+        d.hero_x = nx;
+        d.hero_y = ny;
     
         if (dest == STAIR_DOWN) {
             printf("\n[+] Вы спустились ниже! Глубина: %d\n", d.depth + 1);
