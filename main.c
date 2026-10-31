@@ -20,6 +20,7 @@
 
 #define WALL       '#'
 #define FLOOR      '.'
+#define FLOOR_CRACKED ','
 #define TREE       'T'
 #define ROCK       'R'
 #define HERO       '@'
@@ -232,6 +233,10 @@ static void destroy_dungeon(Dungeon* d) {
     d->width = d->height = 0;
 }
 
+static int is_floor_char(char c) {
+    return c == FLOOR || c == FLOOR_CRACKED;
+}
+
 static int find_free_cell(Dungeon* d, int* ox, int* oy) {
     for (int t = 0; t < MAX_ESCAPE_TRIES; t++) {        
         int x = rand() % d->width;
@@ -267,7 +272,7 @@ static int generate_floor(Dungeon* d, int depth, int with_up_stair) {
             if (x == 0 || y == 0 || x == d->width - 1 || y == d->height - 1)
                 d->map[y][x] = WALL;
             else
-                d->map[y][x] = FLOOR;
+                d->map[y][x] = (rand() % 2) ? FLOOR : FLOOR_CRACKED;
         }
     }
     
@@ -331,6 +336,7 @@ static void draw_dungeon(const Dungeon* d) {
         putchar('\n');
     }
     printf("Позиция: (%d,%d)  Радиус обзора: %d\n", d->hero_x, d->hero_y, VIEW_RADIUS);
+    printf("Легенда: '.' пол, ',' потрескавшийся камень, '#' стена, 'T' дерево, 'R' камень\n");
     printf("[W/A/S/D] шаг, [Q] выход наверх (только на U)\n");
 }
 
@@ -389,10 +395,11 @@ static void do_adventure(void) {
         }
     
         char dest = d.map[ny][nx];
+        int was_on_up_stair = d.on_stair_up;
     
         d.hero_x = nx; d.hero_y = ny;
         d.map[ny][nx] = HERO;
-        d.map[ny - dy][nx - dx] = FLOOR;
+        d.map[ny - dy][nx - dx] = was_on_up_stair ? STAIR_UP : FLOOR;
     
         d.on_stair_up = (dest == STAIR_UP);
     
