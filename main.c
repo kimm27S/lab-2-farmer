@@ -241,14 +241,14 @@ static int find_free_cell(Dungeon* d, int* ox, int* oy) {
     for (int t = 0; t < MAX_ESCAPE_TRIES; t++) {        
         int x = rand() % d->width;
         int y = rand() % d->height;
-        if (d->map[y][x] == FLOOR) {
+        if (is_floor_char(d->map[y][x] == FLOOR)) {
             *ox = x; *oy = y;
             return 1;
         }
     }
     for (int y = 1; y < d->height - 1; y++)
         for (int x = 1; x < d->width - 1; x++)
-            if (d->map[y][x] == FLOOR) {
+            if (is_floor_char(d->map[y][x] == FLOOR)) {
                 *ox = x; *oy = y; return 1;
             }
     return 0;
@@ -279,7 +279,7 @@ static int generate_floor(Dungeon* d, int depth, int with_up_stair) {
     int obstacle_pct = OBSTACLE_MIN + rand() % (OBSTACLE_MAX - OBSTACLE_MIN + 1);
     for (int y = 1; y < d->height - 1; y++) {
         for (int x = 1; x < d->width - 1; x++) {
-            if (d->map[y][x] == FLOOR && (rand() % 100) < obstacle_pct)
+            if (is_floor_char(d->map[y][x]) && (rand() % 100) < obstacle_pct)
                 d->map[y][x] = (rand() % 2) ? TREE : ROCK;
         }
     }
@@ -300,7 +300,7 @@ static int generate_floor(Dungeon* d, int depth, int with_up_stair) {
             int nx = hx + dirs[k][0];
             int ny = hy + dirs[k][1];
             if (ny > 0 && ny < d->height - 1 && nx > 0 && nx < d->width - 1 &&
-                d->map[ny][nx] == FLOOR) {
+                is_floor_char(d->map[ny][nx])) {
                 d->map[ny][nx] = STAIR_UP;
                 placed = 1;
             }
