@@ -3,7 +3,6 @@
 #include <ctype.h>
 #include <time.h>
 
-/* ===== Вспомогательные ===== */
 static char** alloc_map(int w, int h) {
     char** m = (char**)malloc(h * sizeof(char*));
     if (!m) return NULL;
@@ -40,7 +39,6 @@ static int find_free_cell(const Map* d, int* ox, int* oy) {
     return 0;
 }
 
-/* ===== Жизненный цикл ===== */
 Map* map_generate(int depth, int with_up_stair) {
     Map* d = (Map*)malloc(sizeof(Map));
     if (!d) return NULL;
@@ -102,7 +100,6 @@ void map_destroy(Map** pm) {
     *pm = NULL;
 }
 
-/* ===== Отрисовка ===== */
 static int is_visible(int hero_x, int hero_y, int px, int py) {
     int dx = px - hero_x;
     int dy = py - hero_y;
@@ -143,7 +140,6 @@ static int is_night(int hour) {
     return hour == NIGHT_HOUR;
 }
 
-/* ===== Главный цикл приключения ===== */
 void adventure_run(Player* p, int* day, int* hour, Weather* w) {
     if (!p) { printf("[!] Персонаж не создан.\n"); return; }
     if (p->stamina <= 0) { printf("[!] Нет выносливости для похода.\n"); return; }
@@ -202,7 +198,6 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
         else if (cmd == 'd') dx = 1;
         else { printf("Неизвестная команда.\n"); continue; }
 
-        /* Ураган: шанс сноса на соседнюю клетку */
         if (weather_hurricane_chance(w) > 0 &&
             (rand() % 100) < weather_hurricane_chance(w)) {
             int r = rand() % 4;
@@ -222,12 +217,10 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
         p->x = nx;
         p->y = ny;
 
-        /* Расход стамины с учётом погоды */
         int cost = STEP_STAMINA_COST * weather_stamina_multiplier(w);
         p->stamina -= cost;
         if (p->stamina < 0) p->stamina = 0;
 
-        /* Спуск на новый этаж */
         if (dest == STAIR_DOWN) {
             int new_depth = d->depth + 1;
             int reward = BASE_GOLD_MULTIPLIER * new_depth;
