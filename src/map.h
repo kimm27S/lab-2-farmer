@@ -18,6 +18,8 @@ typedef enum {
     DIR_QUIT
 } Direction;
 
+Direction char_to_direction(int cmd);
+
 Map* map_generate(int depth, int with_up_stair);
 void map_destroy(Map** m);
 
