@@ -39,6 +39,23 @@ void weather_randomize(Weather* w) {
     }
 }
 
+int weather_view_radius(const Weather* w) {
+    if (!w) return 4;
+    
+    switch (w->type) {
+        case WEATHER_CLEAR:     
+            return 6;
+        case WEATHER_RAIN:      
+            return 3;
+        case WEATHER_FOG:       
+            return 2;
+        case WEATHER_HURRICANE: 
+            return 4;
+        default:
+            return 4;
+    }
+}
+
 int weather_stamina_multiplier(const Weather* w) {
     if (!w) return 1;
     return (w->type == WEATHER_RAIN) ? 2 : 1;
