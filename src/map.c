@@ -111,25 +111,28 @@ void map_destroy(Map** pm) {
     *pm = NULL;
 }
 
-static int is_visible(int hero_x, int hero_y, int px, int py) {
+static int is_visible(int hero_x, int hero_y, int px, int py, int radius) {
     int dx = px - hero_x;
     int dy = py - hero_y;
-    return (dx * dx + dy * dy) <= (VIEW_RADIUS * VIEW_RADIUS);
+    return (dx * dx + dy * dy) <= (radius * radius);
 }
 
 static void draw_map(const Map* d, const Player* p, const Weather* w, int hour) {
     printf("\n===== ЭТАЖ %d =====\n", d->depth);
     printf("HP: %d/%d | Выносливость: %d/%d | Золото: %d | Этаж: %d | Время: %02d:00\n",
-        p->hp, p->max_hp, p->stamina, p->max_stamina,
-        p->gold, d->depth, hour);
+           p->hp, p->max_hp, p->stamina, p->max_stamina,
+           p->gold, d->depth, hour);
     weather_print(w);
+    
+    int current_radius = weather_view_radius(w);
+    printf("Радиус обзора: %d\n", current_radius);
     printf("-------------------------------------------------------------\n");
 
     for (int y = 0; y < d->height; y++) {
         for (int x = 0; x < d->width; x++) {
             if (x == p->x && y == p->y)
                 putchar(HERO);
-            else if (is_visible(p->x, p->y, x, y))
+            else if (is_visible(p->x, p->y, x, y, current_radius))
                 putchar(d->map[y][x]);
             else
                 putchar(UNKNOWN);
