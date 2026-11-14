@@ -27,6 +27,17 @@ static int is_floor_char(char c) {
     return c == FLOOR || c == FLOOR_CRACKED;
 }
 
+Direction char_to_direction(int cmd) {
+    switch (tolower(cmd)) {
+        case 'w': return DIR_UP;
+        case 's': return DIR_DOWN;
+        case 'a': return DIR_LEFT;
+        case 'd': return DIR_RIGHT;
+        case 'q': return DIR_QUIT;
+        default:  return DIR_NONE;
+    }
+}
+
 static int find_free_cell(const Map* d, int* ox, int* oy) {
     for (int t = 0; t < MAX_ESCAPE_TRIES; t++) {
         int x = rand() % d->width;
@@ -163,22 +174,22 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
         draw_map(d, p, w, *hour);
 
         printf("Команда: ");
-        int cmd = tolower((unsigned char)read_char_choice());
+        int cmd = read_char_choice();
+        Direction dir = char_to_direction(cmd);
 
-        if (cmd == 'q') {
+        if (dir == DIR_QUIT) {
             if (d->map[p->y][p->x] == STAIR_UP) {
                 printf("[+] Штатный выход. Этаж: %d, золото сохранено: %d\n",
                     d->depth, p->gold);
                 running = 0;
                 break;
-            }
-            else {
+            } else {
                 printf("[!] Здесь нет лестницы наверх (U).\n");
                 continue;
             }
         }
 
-        if (cmd == 't') {
+        if (tolower(cmd) == 't') {
             int next_hour = *hour + 1;
             int next_day = *day;
             if (next_hour >= 24) { next_hour -= 24; next_day++; }
@@ -192,11 +203,16 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
         }
 
         int dx = 0, dy = 0;
-        if (cmd == 'w') dy = -1;
-        else if (cmd == 's') dy = 1;
-        else if (cmd == 'a') dx = -1;
-        else if (cmd == 'd') dx = 1;
-        else { printf("Неизвестная команда.\n"); continue; }
+        switch (dir) {
+            case DIR_UP:    dy = -1; break;
+            case DIR_DOWN:  dy = 1;  break;
+            case DIR_LEFT:  dx = -1; break;
+            case DIR_RIGHT: dx = 1;  break;
+            case DIR_NONE:
+            default:
+                printf("Неизвестная команда.\n");
+                continue;
+        }
 
         if (weather_hurricane_chance(w) > 0 &&
             (rand() % 100) < weather_hurricane_chance(w)) {
