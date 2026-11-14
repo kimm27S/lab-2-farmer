@@ -20,6 +20,7 @@ void        weather_randomize(Weather* w);
 const char* weather_name(WeatherType t);
 int         weather_stamina_multiplier(const Weather* w);
 int         weather_hurricane_chance(const Weather* w);
+int         weather_view_radius(const Weather* w);
 void        weather_print(const Weather* w);
 
 #endif
