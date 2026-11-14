@@ -14,7 +14,6 @@
 #define OBSTACLE_MIN        15
 #define OBSTACLE_MAX        30
 #define MAX_ESCAPE_TRIES    1000
-#define VIEW_RADIUS         4
 
 #define BASE_GOLD_MULTIPLIER    10
 #define STEP_STAMINA_COST       1
