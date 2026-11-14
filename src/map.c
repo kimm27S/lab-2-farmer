@@ -117,6 +117,25 @@ static int is_visible(int hero_x, int hero_y, int px, int py, int radius) {
     return (dx * dx + dy * dy) <= (radius * radius);
 }
 
+static const char* get_direction_hint(int hero_x, int hero_y, int target_x, int target_y) {
+    int dx = target_x - hero_x;
+    int dy = target_y - hero_y;
+    
+    if (dx == 0 && dy == 0) return "вы здесь";
+
+    if (dy < 0 && dx == 0) return "север (W)";
+    if (dy > 0 && dx == 0) return "юг (S)";
+    if (dx < 0 && dy == 0) return "запад (A)";
+    if (dx > 0 && dy == 0) return "восток (D)";
+    
+    if (dy < 0 && dx < 0) return "северо-запад (W+A)";
+    if (dy < 0 && dx > 0) return "северо-восток (W+D)";
+    if (dy > 0 && dx < 0) return "юго-запад (S+A)";
+    if (dy > 0 && dx > 0) return "юго-восток (S+D)";
+    
+    return "?";
+}
+
 static void draw_map(const Map* d, const Player* p, const Weather* w, int hour) {
     printf("\n===== ЭТАЖ %d =====\n", d->depth);
     printf("HP: %d/%d | Выносливость: %d/%d | Золото: %d | Этаж: %d | Время: %02d:00\n",
@@ -141,6 +160,32 @@ static void draw_map(const Map* d, const Player* p, const Weather* w, int hour) 
     }
     printf("Легенда: '.' пол, ',' трещины, '#' стена, 'T' дерево, 'R' камень,\n");
     printf("         'D' спуск, 'U' выход, '@' вы\n");
+
+    int has_stair_up = 0;
+    int down_x = -1, down_y = -1;
+    int up_x = -1, up_y = -1;
+
+    for (int y = 0; y < d->height; y++) {
+        for (int x = 0; x < d->width; x++) {
+            if (d->map[y][x] == STAIR_DOWN) { down_x = x; down_y = y; }
+            if (d->map[y][x] == STAIR_UP)   { up_x = x;   up_y = y; has_stair_up = 1; }
+        }
+    }
+
+    printf("\n=== УКАЗАТЕЛИ ===\n");
+    if (down_x != -1) {
+        printf("⬇ Лестница ВНИЗ (D) находится: %s\n", get_direction_hint(p->x, p->y, down_x, down_y));
+    } else {
+        printf("⬇ Лестница ВНИЗ (D) на этом этаже не найдена!\n");
+    }
+
+    if (has_stair_up) {
+        printf("⬆ Лестница ВВЕРХ (U) находится: %s\n", get_direction_hint(p->x, p->y, up_x, up_y));
+    } else {
+        printf("⬆ Лестница ВВЕРХ (U) на этом этаже отсутствует.\n");
+    }
+    printf("=================================\n");
+
     printf("[W/A/S/D] шаг, [T] ждать 1 час, [Q] выход (только стоя на U)\n");
 }
 
