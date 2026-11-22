@@ -11,8 +11,6 @@
 
 #define MIN_MAP_SIZE        5
 #define MAX_MAP_SIZE        30
-#define OBSTACLE_MIN        15
-#define OBSTACLE_MAX        30
 #define MAX_ESCAPE_TRIES    1000
 
 #define BASE_GOLD_MULTIPLIER    10
