@@ -2,7 +2,6 @@
 #include "entity.h"
 #include <stdlib.h>
 
-// Инициализация массива сущностей на этаже
 void entity_init_floor(Entity** entities, int* count, int floor_depth, int map_width, int map_height, char** map) {
     int max_entities = map_width * map_height;
     *entities = (Entity*)malloc(max_entities * sizeof(Entity));
@@ -17,8 +16,6 @@ void entity_init_floor(Entity** entities, int* count, int floor_depth, int map_w
         for (int x = 1; x < map_width - 1; x++) {
             if (map[y][x] == FLOOR || map[y][x] == FLOOR_CRACKED) {
 
-                // Шанс появления объекта на клетке (поднимаем до 25-30%)
-                // Рандом 0-99, если выпадает меньше 28, ставим объект
                 if (rand() % 100 < 35) {
                     Entity* e = &(*entities)[*count];
                     e->is_alive = 1;
@@ -27,8 +24,7 @@ void entity_init_floor(Entity** entities, int* count, int floor_depth, int map_w
 
                     int r = rand() % 100;
 
-                    // Распределение: 45% деревья, 35% камни, 10% аптечки, 10% монстры
-                    if (r < 45) { // Дерево
+                    if (r < 45) {
                         e->type = ENT_TREE;
                         e->symbol = TREE;
                         e->max_hp = 20 + floor_depth * 5;
@@ -36,7 +32,7 @@ void entity_init_floor(Entity** entities, int* count, int floor_depth, int map_w
                         e->attack = 0;
                         e->drop_item_id = 1;
                     }
-                    else if (r < 80) { // Камень
+                    else if (r < 80) {
                         e->type = ENT_ROCK;
                         e->symbol = ROCK;
                         e->max_hp = 30 + floor_depth * 5;
@@ -44,7 +40,7 @@ void entity_init_floor(Entity** entities, int* count, int floor_depth, int map_w
                         e->attack = 0;
                         e->drop_item_id = 2;
                     }
-                    else if (r < 90) { // Аптечка
+                    else if (r < 90) {
                         e->type = ENT_HEAL;
                         e->symbol = '+';
                         e->max_hp = 1;
@@ -52,7 +48,7 @@ void entity_init_floor(Entity** entities, int* count, int floor_depth, int map_w
                         e->attack = 0;
                         e->drop_item_id = 0;
                     }
-                    else { // Монстр
+                    else {
                         e->type = ENT_MONSTER;
                         e->symbol = 'M';
                         e->max_hp = 10 + floor_depth * 5;
@@ -61,7 +57,6 @@ void entity_init_floor(Entity** entities, int* count, int floor_depth, int map_w
                         e->drop_item_id = 8;
                     }
 
-                    // Ставим символ на карту
                     map[y][x] = e->symbol;
                     (*count)++;
                 }
