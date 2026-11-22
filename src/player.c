@@ -66,6 +66,10 @@ Player* player_create(void) {
     p->max_stamina = 50;
     p->stamina = 50;
     p->gold = START_GOLD;
+    p->attack = 5;
+    p->defense = 2;
+    p->shield_active = 0;
+    p->shield_used = 0;
     p->x = p->y = 0;
     for (int i = 0; i < INVENTORY_SIZE; i++) p->inventory[i] = 0;
 
