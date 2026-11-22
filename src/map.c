@@ -70,12 +70,6 @@ Map* map_generate(int depth, int with_up_stair) {
         }
     }
 
-    int obstacle_pct = OBSTACLE_MIN + rand() % (OBSTACLE_MAX - OBSTACLE_MIN + 1);
-    for (int y = 1; y < d->height - 1; y++)
-        for (int x = 1; x < d->width - 1; x++)
-            if (is_floor_char(d->map[y][x]) && (rand() % 100) < obstacle_pct)
-                d->map[y][x] = (rand() % 2) ? TREE : ROCK;
-
     int hx, hy;
     if (!find_free_cell(d, &hx, &hy)) { map_destroy(&d); return NULL; }
 
@@ -100,11 +94,18 @@ Map* map_generate(int depth, int with_up_stair) {
     int dx, dy;
     if (find_free_cell(d, &dx, &dy)) d->map[dy][dx] = STAIR_DOWN;
 
+    entity_init_floor(&d->entities, &d->entity_count, depth, d->width, d->height, d->map);
+    
     return d;
 }
 
 void map_destroy(Map** pm) {
     if (!pm || !*pm) return;
+
+    if ((*pm)->entities) {
+    entity_free(&((*pm)->entities), (*pm)->entity_count);
+    }
+    
     free_map((*pm)->map, (*pm)->height);
     printf("Память структуры по адресу %p освобождена\n", (void*)*pm);
     free(*pm);
@@ -175,24 +176,26 @@ static void draw_map(const Map* d, const Player* p, const Weather* w, int hour) 
     printf("\n=== УКАЗАТЕЛИ ===\n");
     if (down_x != -1) {
         printf("⬇ Лестница ВНИЗ (D) находится: %s\n", get_direction_hint(p->x, p->y, down_x, down_y));
-    } else {
+    } 
+    else {
         printf("⬇ Лестница ВНИЗ (D) на этом этаже не найдена!\n");
     }
 
     if (has_stair_up) {
         printf("⬆ Лестница ВВЕРХ (U) находится: %s\n", get_direction_hint(p->x, p->y, up_x, up_y));
-    } else {
+    }
+    else {
         printf("⬆ Лестница ВВЕРХ (U) на этом этаже отсутствует.\n");
     }
     printf("=================================\n");
-
     printf("[W/A/S/D] шаг, [T] ждать 1 час, [Q] выход (только стоя на U)\n");
 }
 
 static int can_step(const Map* d, int nx, int ny) {
     if (nx < 0 || ny < 0 || nx >= d->width || ny >= d->height) return 0;
-    char c = d->map[ny][nx];
-    return !(c == WALL || c == TREE || c == ROCK);
+    if (d->map[ny][nx] == WALL) return 0;
+    if (d->map[ny][nx] == TREE || d->map[ny][nx] == ROCK || d->map[ny][nx] == 'M') return 0;
+    return 1;
 }
 
 static int is_night(int hour) {
@@ -203,6 +206,9 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
     if (!p) { printf("[!] Персонаж не создан.\n"); return; }
     if (p->stamina <= 0) { printf("[!] Нет выносливости для похода.\n"); return; }
     if (is_night(*hour)) { printf("[!] Ночью (02:00) фермер должен спать.\n"); return; }
+
+    p->shield_active = 0;
+    p->shield_used = 0;
 
     weather_randomize(w);
     printf("\n[ Погода на локации ]\n");
@@ -227,11 +233,11 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
 
         if (dir == DIR_QUIT) {
             if (d->map[p->y][p->x] == STAIR_UP) {
-                printf("[+] Штатный выход. Этаж: %d, золото сохранено: %d\n",
-                    d->depth, p->gold);
+                printf("[+] Штатный выход. Этаж: %d, золото сохранено: %d\n", d->depth, p->gold);
                 running = 0;
                 break;
-            } else {
+            } 
+            else {
                 printf("[!] Здесь нет лестницы наверх (U).\n");
                 continue;
             }
@@ -262,12 +268,13 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
                 continue;
         }
 
-        if (weather_hurricane_chance(w) > 0 &&
-            (rand() % 100) < weather_hurricane_chance(w)) {
+        if (weather_hurricane_chance(w) > 0 && (rand() % 100) < weather_hurricane_chance(w)) {
             int r = rand() % 4;
             const int dirs[4][2] = { { 0,-1 },{ 0,1 },{ -1,0 },{ 1,0 } };
             int ndx = dirs[r][0], ndy = dirs[r][1];
-            if (can_step(d, p->x + ndx, p->y + ndy)) {
+
+            int tx = p->x + ndx, ty = p->y + ndy;
+            if (tx >= 0 && tx < d->width && ty >= 0 && ty < d->height && d->map[ty][tx] != WALL) {
                 dx = ndx;
                 dy = ndy;
                 printf("[!] Ураган снёс вас на соседнюю клетку!\n");
@@ -275,7 +282,144 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
         }
 
         int nx = p->x + dx, ny = p->y + dy;
-        if (!can_step(d, nx, ny)) { printf("[!] Стена или препятствие.\n"); continue; }
+
+        if (nx < 0 || ny < 0 || nx >= d->width || ny >= d->height || d->map[ny][nx] == WALL) {
+            printf("[!] Стена или граница карты.\n");
+            continue;
+        }
+
+        Entity* target = entity_get_at(d->entities, d->entity_count, nx, ny);
+        char dest = d->map[ny][nx];
+
+        if (target != NULL) {
+            p->stamina -= 2;
+            if (p->stamina < 0) p->stamina = 0;
+        
+            if (target->type == ENT_HEAL) {
+                p->hp += 20;
+                if (p->hp > p->max_hp) p->hp = p->max_hp;
+                p->stamina += 10;
+                if (p->stamina > p->max_stamina) p->stamina = p->max_stamina;
+        
+                target->is_alive = 0;
+                d->map[ny][nx] = FLOOR;
+        
+                p->x = nx;
+                p->y = ny;
+        
+                printf("[+] Вы подобрали аптечку! HP и Стамина восстановлены.\n");
+            }
+            else if (target->type == ENT_TREE || target->type == ENT_ROCK) {
+                int dmg = p->attack;
+                target->hp -= dmg;
+                printf("[!] Вы ударили %c на %d урона. Прочность: %d/%d\n", target->symbol, dmg, target->hp, target->max_hp);
+        
+                if (target->hp <= 0) {
+                    target->is_alive = 0;
+                    d->map[ny][nx] = FLOOR;
+                    int placed = 0;
+                    for (int i = 0; i < INVENTORY_SIZE; i++) {
+                        if (p->inventory[i] == 0) {
+                            p->inventory[i] = target->drop_item_id;
+                            placed = 1;
+                            break;
+                        }
+                    }
+                    if (!placed) {
+                        printf("[!] Рюкзак полон!\n");
+                    }
+                    else {
+                        printf("[+] Вы добыли ресурс: %s!\n", g_item_names[target->drop_item_id]);
+                    }
+                }
+            }
+            else if (target->type == ENT_MONSTER) {
+                int player_dmg = p->attack - (target->attack / 2);
+                if (player_dmg < 1) player_dmg = 1;
+                target->hp -= player_dmg;
+                printf("[!] Вы ударили монстра на %d урона. У него осталось %d HP.\n", player_dmg, target->hp);
+        
+                if (target->hp <= 0) {
+                    target->is_alive = 0;
+                    d->map[ny][nx] = FLOOR;
+                    p->gold += 10;
+                    printf("[+] Монстр повержен! +10 золота.\n");
+                }
+                else {
+                    int monster_dmg = target->attack - (p->defense / 2);
+                    if (monster_dmg < 1) monster_dmg = 1;
+        
+                    if (p->shield_active) {
+                        printf("[!!!] МАГИЧЕСКИЙ ЩИТ ПОГЛОТИЛ УДАР! Урона нет.\n");
+                        p->shield_active = 0;
+                    }
+                    else {
+                        p->hp -= monster_dmg;
+                        printf("[!] Монстр ударил вас на %d урона.\n", monster_dmg);
+        
+                        if (p->hp > 0 && p->hp < (p->max_hp / 2) && p->shield_used == 0) {
+                            printf("\n[!!!] ВТОРОЕ ДЫХАНИЕ! Магический щит активирован. Следующий удар будет заблокирован.\n");
+                            p->shield_active = 1;
+                            p->shield_used = 1;
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            p->x = nx;
+            p->y = ny;
+        
+            int cost = STEP_STAMINA_COST * weather_stamina_multiplier(w);
+            p->stamina -= cost;
+            if (p->stamina < 0) p->stamina = 0;
+        }
+
+        if (target == NULL && dest == STAIR_DOWN) {
+            int new_depth = d->depth + 1;
+            int reward = BASE_GOLD_MULTIPLIER * new_depth;
+            p->gold += reward;
+            printf("[+] Спуск! Этаж %d. Награда: +%d золота.\n", new_depth, reward);
+        
+            p->stamina -= FLOOR_STAMINA_COST;
+            if (p->stamina < 0) p->stamina = 0;
+        
+            (*hour)++;
+            if (*hour >= 24) { *hour -= 24; (*day)++; }
+        
+            weather_randomize(w);
+            p->shield_used = 0;
+            p->shield_active = 0;
+        
+            Map* newd = map_generate(new_depth, 1);
+            if (!newd) { printf("[!] Не удалось сгенерировать этаж.\n"); running = 0; break; }
+            map_destroy(&d);
+            d = newd;
+        
+            if (!find_free_cell(d, &hx, &hy)) { running = 0; break; }
+            p->x = hx;
+            p->y = hy;
+        
+            if (p->stamina <= 0) {
+                printf("\n[!] ОБМОРОК! Выносливость на нуле.\n");
+                int loss = p->gold / 2;
+                p->gold -= loss;
+                printf("[!] Спасатели забрали %d золота. Возврат домой.\n", loss);
+                running = 0;
+            }
+            else if (is_night(*hour)) {
+                printf("\n[!] Наступило 02:00 — фермер падает без сил!\n");
+                int loss = p->gold / 2;
+                p->gold -= loss;
+                printf("[!] Спасатели забрали %d золота. Возврат домой.\n", loss);
+                running = 0;
+            }
+            continue;
+        }
+
+        if (target == NULL && dest == STAIR_UP) {
+            printf("[!] Вы на лестнице наверх. Нажмите Q.\n");
+        }
 
         char dest = d->map[ny][nx];
         p->x = nx;
@@ -331,6 +475,13 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
 
         if (p->stamina <= 0) {
             printf("\n[!] ОБМОРОК! Выносливость на нуле.\n");
+            int loss = p->gold / 2;
+            p->gold -= loss;
+            printf("[!] Спасатели забрали %d золота. Возврат домой.\n", loss);
+            running = 0;
+        }
+        else if (p->hp <= 0) {
+            printf("\n[!] ОБМОРОК! Здоровье на нуле.\n");
             int loss = p->gold / 2;
             p->gold -= loss;
             printf("[!] Спасатели забрали %d золота. Возврат домой.\n", loss);
