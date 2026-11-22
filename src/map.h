@@ -4,12 +4,16 @@
 #include "utils.h"
 #include "player.h"
 #include "weather.h"
+#include "entity.h"
 
 typedef struct Map {
     char** map;
     int    width;
     int    height;
     int    depth;
+
+    Entity* entities;
+    int entity_count;
 } Map;
 
 typedef enum {
