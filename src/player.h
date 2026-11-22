@@ -25,6 +25,10 @@ typedef struct Player {
     int  stamina;
     int  max_stamina;
     int  gold;
+    int  attack;
+    int  defense;
+    int  shield_active;
+    int  shield_used;
     int  x, y;
     int  inventory[INVENTORY_SIZE];
 } Player;
@@ -46,4 +50,4 @@ void player_write_diary(const Player* p, int day, int hour);
 
 void player_rest(Player* p);
 
-#endif /* PLAYER_H */
+#endif
