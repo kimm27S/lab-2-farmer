@@ -29,4 +29,6 @@ void map_destroy(Map** m);
 
 void adventure_run(Player* p, int* day, int* hour, Weather* w);
 
+void entity_attack(Player* p, Entity* target, Map* d);
+
 #endif
