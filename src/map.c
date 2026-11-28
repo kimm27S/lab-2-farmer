@@ -202,6 +202,67 @@ static int is_night(int hour) {
     return hour == NIGHT_HOUR;
 }
 
+void entity_attack(Player* p, Entity* target, Map* d) {
+    int player_dmg = p->attack - (target->attack / 2);
+    if (player_dmg < 1) player_dmg = 1;
+
+    target->hp -= player_dmg;
+
+    if (target->type == ENT_MONSTER) {
+        printf("[!] Вы ударили монстра на %d урона. У него осталось %d HP.\n", player_dmg, target->hp);
+    }
+    else {
+        printf("[!] Вы ударили %c на %d урона. Прочность: %d/%d\n", target->symbol, player_dmg, target->hp, target->max_hp);
+    }
+
+    if (target->hp <= 0) {
+        target->is_alive = 0;
+        d->map[target->y][target->x] = FLOOR;
+
+        if (target->type == ENT_MONSTER) {
+            p->gold += 10;
+            printf("[+] Монстр повержен! +10 золота.\n");
+        }
+        else if (target->type == ENT_TREE || target->type == ENT_ROCK) {
+            int placed = 0;
+            for (int i = 0; i < INVENTORY_SIZE; i++) {
+                if (p->inventory[i] == 0) {
+                    p->inventory[i] = target->drop_item_id;
+                    placed = 1;
+                    break;
+                }
+            }
+            if (!placed) {
+                printf("[!] Рюкзак полон!\n");
+            }
+            else {
+                printf("[+] Вы добыли ресурс: %s!\n", g_item_names[target->drop_item_id]);
+            }
+        }
+        return;
+    }
+
+    if (target->attack > 0) {
+        int monster_dmg = target->attack - (p->defense / 2);
+        if (monster_dmg < 1) monster_dmg = 1;
+
+        if (p->shield_active) {
+            printf("[!!!] МАГИЧЕСКИЙ ЩИТ ПОГЛОТИЛ УДАР! Урона нет.\n");
+            p->shield_active = 0;
+        }
+        else {
+            p->hp -= monster_dmg;
+            printf("[!] Монстр ударил вас на %d урона.\n", monster_dmg);
+
+            if (p->hp > 0 && p->hp < (p->max_hp / 2) && p->shield_used == 0) {
+                printf("\n[!!!] ВТОРОЕ ДЫХАНИЕ! Магический щит активирован. Следующий удар будет заблокирован.\n");
+                p->shield_active = 1;
+                p->shield_used = 1;
+            }
+        }
+    }
+}
+
 void adventure_run(Player* p, int* day, int* hour, Weather* w) {
     if (!p) { printf("[!] Персонаж не создан.\n"); return; }
     if (p->stamina <= 0) { printf("[!] Нет выносливости для похода.\n"); return; }
@@ -295,76 +356,21 @@ void adventure_run(Player* p, int* day, int* hour, Weather* w) {
             p->stamina -= 2;
             if (p->stamina < 0) p->stamina = 0;
         
-            if (target->type == ENT_HEAL) {
-                p->hp += 20;
-                if (p->hp > p->max_hp) p->hp = p->max_hp;
-                p->stamina += 10;
-                if (p->stamina > p->max_stamina) p->stamina = p->max_stamina;
-        
-                target->is_alive = 0;
-                d->map[ny][nx] = FLOOR;
-        
-                p->x = nx;
-                p->y = ny;
-        
-                printf("[+] Вы подобрали аптечку! HP и Стамина восстановлены.\n");
-            }
-            else if (target->type == ENT_TREE || target->type == ENT_ROCK) {
-                int dmg = p->attack;
-                target->hp -= dmg;
-                printf("[!] Вы ударили %c на %d урона. Прочность: %d/%d\n", target->symbol, dmg, target->hp, target->max_hp);
-        
-                if (target->hp <= 0) {
+                if (target->type == ENT_HEAL) {
+                    p->hp += 20;
+                    if (p->hp > p->max_hp) p->hp = p->max_hp;
+                    p->stamina += 10;
+                    if (p->stamina > p->max_stamina) p->stamina = p->max_stamina;
+            
                     target->is_alive = 0;
                     d->map[ny][nx] = FLOOR;
-                    int placed = 0;
-                    for (int i = 0; i < INVENTORY_SIZE; i++) {
-                        if (p->inventory[i] == 0) {
-                            p->inventory[i] = target->drop_item_id;
-                            placed = 1;
-                            break;
-                        }
-                    }
-                    if (!placed) {
-                        printf("[!] Рюкзак полон!\n");
-                    }
-                    else {
-                        printf("[+] Вы добыли ресурс: %s!\n", g_item_names[target->drop_item_id]);
-                    }
-                }
-            }
-            else if (target->type == ENT_MONSTER) {
-                int player_dmg = p->attack - (target->attack / 2);
-                if (player_dmg < 1) player_dmg = 1;
-                target->hp -= player_dmg;
-                printf("[!] Вы ударили монстра на %d урона. У него осталось %d HP.\n", player_dmg, target->hp);
-        
-                if (target->hp <= 0) {
-                    target->is_alive = 0;
-                    d->map[ny][nx] = FLOOR;
-                    p->gold += 10;
-                    printf("[+] Монстр повержен! +10 золота.\n");
+                    p->x = nx;
+                    p->y = ny;
+                    printf("[+] Вы подобрали аптечку! HP и Стамина восстановлены.\n");
                 }
                 else {
-                    int monster_dmg = target->attack - (p->defense / 2);
-                    if (monster_dmg < 1) monster_dmg = 1;
-        
-                    if (p->shield_active) {
-                        printf("[!!!] МАГИЧЕСКИЙ ЩИТ ПОГЛОТИЛ УДАР! Урона нет.\n");
-                        p->shield_active = 0;
-                    }
-                    else {
-                        p->hp -= monster_dmg;
-                        printf("[!] Монстр ударил вас на %d урона.\n", monster_dmg);
-        
-                        if (p->hp > 0 && p->hp < (p->max_hp / 2) && p->shield_used == 0) {
-                            printf("\n[!!!] ВТОРОЕ ДЫХАНИЕ! Магический щит активирован. Следующий удар будет заблокирован.\n");
-                            p->shield_active = 1;
-                            p->shield_used = 1;
-                        }
-                    }
+                    entity_attack(p, target, d);
                 }
-            }
         }
         else {
             p->x = nx;
